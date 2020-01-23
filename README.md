@@ -1,5 +1,8 @@
 # Snapshots
 
+This example shows how you can add screenshot snapshot tests to your angular e2e tests. See the complete [diff](https://github.com/DanielSchiavini/angular-screenshot-snapshot-example/compare/angular-generated...master?expand=1) with the changes made based on the generated code.
+
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.23.
 
 ## Development server
