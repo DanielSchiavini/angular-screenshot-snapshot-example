@@ -1,6 +1,6 @@
 import { AppPage } from './app.po';
 import { browser, logging } from 'protractor';
-import {getSnapshotDiff} from './screenshot-snapshot';
+import {checkSnapshot, getSnapshotDiff} from './screenshot-snapshot';
 
 describe('workspace-project App', () => {
   let page: AppPage;
@@ -15,7 +15,7 @@ describe('workspace-project App', () => {
   });
 
   it('should match the snaposhot', async () => {
-    expect(await getSnapshotDiff('example')).toEqual(0);
+    await checkSnapshot('example');
   });
 
   afterEach(async () => {
