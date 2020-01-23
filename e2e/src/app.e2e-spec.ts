@@ -1,6 +1,6 @@
 import { AppPage } from './app.po';
 import { browser, logging } from 'protractor';
-import {checkSnapshot, getSnapshotDiff} from './screenshot-snapshot';
+import {checkSnapshot} from './screenshot-snapshot';
 
 describe('workspace-project App', () => {
   let page: AppPage;
