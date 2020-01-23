@@ -14,7 +14,7 @@ describe('workspace-project App', () => {
     expect(page.getTitleText()).toEqual('snapshots app is running!');
   });
 
-  it('should match the snaposhot', async () => {
+  it('should match the snapshot', async () => {
     await checkSnapshot('example');
   });
 
