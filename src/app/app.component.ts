@@ -1,5 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import * as d3 from 'd3';
+import {Selection} from 'd3-selection';
+import {zoom, ZoomBehavior, ZoomedElementBaseType} from 'd3';
 
 interface Point {
   x: number;
@@ -12,7 +14,10 @@ interface Point {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  private dataGroupSelection: Selection<SVGGElement, any, HTMLElement, any>;
+
   ngOnInit(): void {
+
     const svgWidth = window.innerWidth - 25;
     const svgHeight = window.innerHeight - 25;
 
@@ -34,19 +39,26 @@ export class AppComponent implements OnInit {
       .domain([0, yMaxValue])
       .range([0, svgHeight - yAxisHeight]);
 
-    // This is the accessor function we talked about above
     const line = d3.line();
-    this.draw(svgWidth, svgHeight, linesData, line, xScale, yScale);
-  }
 
-  private draw(svgWidth, svgHeight, linesData, line, xScale, yScale) {
-    d3.select('#graph-container')
-      .append('svg')
+    // This is the accessor function we talked about above
+    const zoomBehavior = d3.zoom().on('zoom', () => this.dataGroupSelection.attr('transform', d3.event.transform));
+
+    d3.select('svg#graph-container')
       .style('border', '1px solid black')
       .attr('width', svgWidth)
-      .attr('height', svgHeight)
+      .attr('height', svgHeight);
 
-      .append('g')
+    this.dataGroupSelection = d3.select<SVGGElement, any>('g#data-group')
+      .call(zoomBehavior);
+    this.updateData(linesData, line, xScale, yScale);
+  }
+
+  private updateData(linesData: Point[][],
+                     line: d3.Line<[number, number]>,
+                     xScale: d3.ScaleLinear<number, number>,
+                     yScale: d3.ScaleLinear<number, number>) {
+    this.dataGroupSelection
       .selectAll('path')
       .data(linesData)
       .join('path')
