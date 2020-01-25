@@ -20,6 +20,8 @@
     "@angular/platform-browser-dynamic": "~8.2.14",
     "@angular/router": "~8.2.14",
     "@types/d3": "^5.7.2",
+    "@types/d3-scale": "^2.1.1",
+    "@types/d3-zoom": "^1.7.4",
     "@types/pixelmatch": "^5.0.0",
     "@types/pngjs": "^3.4.0",
     "d3": "^5.15.0",
