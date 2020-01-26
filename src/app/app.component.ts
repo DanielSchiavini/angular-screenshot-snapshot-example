@@ -19,86 +19,74 @@ function getExtents([x0, x1]: number[], [y0, y1]: number[]): [[number, number], 
   return [[x0, y0], [x1, y1]];
 }
 
-const line = d3.line();
-
-const xMaxValue = 100;
-const yMaxValue = 60;
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  private dataGroupSelection: Selection<SVGGElement, Point[][], HTMLElement, any>;
-  private svgSelection: Selection<SVGSVGElement, null, HTMLElement, any>;
-  private zoom: ZoomBehavior<SVGSVGElement, null>;
   private xScale: ScaleLinear<number, number>;
   private yScale: ScaleLinear<number, number>;
-  private transform = d3.zoomIdentity;
-
-  private svgWidth: number;
-  private svgHeight: number;
-  private xAxisHeight = 100;
-  private yAxisWidth = 100;
 
   ngOnInit(): void {
+    const svgWidth = window.innerWidth - 25;
+    const svgHeight = window.innerHeight - 25;
 
-    this.svgWidth = window.innerWidth - 25;
-    this.svgHeight = window.innerHeight - 25;
+    const xMaxValue = 100;
+    const yMaxValue = 60;
+
+    const xAxisHeight = 100;
+    const yAxisWidth = 100;
 
     this.xScale = d3.scaleLinear()
       .domain([0, xMaxValue])
-      .range([this.yAxisWidth, this.svgWidth]);
+      .range([yAxisWidth, svgWidth]);
 
     this.yScale = d3.scaleLinear()
       .domain([0, yMaxValue])
-      .range([0, this.svgHeight - this.xAxisHeight]);
+      .range([0, svgHeight - xAxisHeight]);
 
-    // The data for our line
-    const linesData = this.generateData();
-
-    // This is the accessor function we talked about above
     const extent = getExtents(this.xScale.range(), this.yScale.range());
-    this.zoom = d3.zoom<SVGSVGElement, null>()
+    const zoomBehavior = d3.zoom<SVGSVGElement, null>()
       .extent(extent)
       .translateExtent(extent)
       .scaleExtent([1, 8]);
 
-    this.svgSelection = d3.select<SVGSVGElement, null>('svg#graph-container')
+    const svgSelection = d3.select<SVGSVGElement, null>('svg#graph-container')
       .style('border', '1px solid black')
-      .attr('width', this.svgWidth)
-      .attr('height', this.svgHeight)
-      .call(this.zoom.on('zoom', () => this.zoomedIn(d3.event as ZoomEvent)));
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .call(zoomBehavior.on('zoom', () => this.zoomedIn(d3.event as ZoomEvent)));
 
-    this.dataGroupSelection = d3.select<SVGGElement, Point[][]>('g#data-group');
-
-    this.svgSelection.insert('rect', 'g#x-axis')
+    svgSelection.insert('rect', 'g#x-axis')
       .attr('width', '100%')
-      .attr('height', this.xAxisHeight)
-      .style('transform', 'translate(0, ' + (this.svgHeight - this.xAxisHeight) + 'px)')
+      .attr('height', xAxisHeight)
+      .style('transform', 'translate(0, ' + (svgHeight - xAxisHeight) + 'px)')
       .style('fill', 'white');
 
-    this.svgSelection.insert('rect', 'g#y-axis')
-      .attr('width', this.yAxisWidth)
+    svgSelection.insert('rect', 'g#y-axis')
+      .attr('width', yAxisWidth)
       .attr('height', '100%')
       .style('fill', 'white');
 
-    this.updateData(linesData);
+    this.updateData(this.generateData());
   }
 
   private updateData(linesData: Point[][]): void {
-    const selection = this.dataGroupSelection
+    const selection = d3.select<SVGGElement, Point[][]>('g#data-group')
       .selectAll('path')
       .data(linesData)
       .join('path')
       .attr('stroke', 'blue')
       .attr('stroke-width', 2)
       .attr('fill', 'none');
-    this.rescale(selection as any);
+    this.rescale(selection as any, d3.zoomIdentity);
   }
 
   private generateData(): Point[][] {
+    const xMaxValue = this.xScale.domain()[1];
+    const yMaxValue = this.yScale.domain()[1];
+
     const xGenerator = d3.randomUniform(xMaxValue);
     const yGenerator = d3.randomUniform(yMaxValue);
     const linesData = d3.range(10)
@@ -106,26 +94,28 @@ export class AppComponent implements OnInit {
         .map(() => ({ x: xGenerator(), y: yGenerator(), }))
         .sort((a, b) => a.x - b.x || a.y - b.y)
       );
-    linesData.push([{x: 0, y: 0}, {x: xMaxValue - 1, y: 0}, {x: 0, y: yMaxValue - 1}, {x: xMaxValue - 1, y: yMaxValue - 1}]);
+    linesData.push([{x: 0, y: 0}, {x: xMaxValue, y: 0}, {x: 0, y: yMaxValue}, {x: xMaxValue, y: yMaxValue}]);
     console.log(linesData);
     return linesData;
   }
 
   private zoomedIn(event: ZoomEvent): void {
-    this.transform = event.transform;
-    this.rescale(this.dataGroupSelection.selectAll('path'));
+    this.rescale(d3.select<SVGGElement, Point[][]>('g#data-group').selectAll('path'), event.transform as ZoomTransform);
   }
 
-  private rescale(selection: Selection<SVGPathElement, Point[], SVGGElement, Point[][]>) {
-    const xScale = this.transform.rescaleX(this.xScale);
-    const yScale = this.transform.rescaleY(this.yScale);
+  private rescale(selection: Selection<SVGPathElement, Point[], SVGGElement, Point[][]>,
+                  transform: ZoomTransform) {
+    const xScale = transform.rescaleX(this.xScale);
+    const yScale = transform.rescaleY(this.yScale);
+    const line = d3.line();
+
     selection.attr('d', (lineData: Point[]) => line(lineData.map(({x, y}) => [xScale(x), yScale(y)])));
 
-    this.svgSelection.select('g#x-axis')
+    d3.select('g#x-axis')
       .attr('transform', d3.zoomIdentity.translate(0, yScale.range()[1]).toString())
       .call(d3.axisBottom(xScale));
 
-    this.svgSelection.select('g#y-axis')
+    d3.select('g#y-axis')
       .attr('transform', d3.zoomIdentity.translate(xScale.range()[0], 0).toString())
       .call(d3.axisLeft(yScale));
   }
