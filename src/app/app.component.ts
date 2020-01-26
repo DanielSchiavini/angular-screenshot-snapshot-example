@@ -71,9 +71,6 @@ export class AppComponent implements OnInit {
 
     this.dataGroupSelection = d3.select<SVGGElement, Point[][]>('g#data-group');
 
-    const xAxis = d3.axisLeft(this.xScale);
-    const yAxis = d3.axisLeft(this.yScale);
-
     this.updateData(linesData);
   }
 
@@ -110,5 +107,13 @@ export class AppComponent implements OnInit {
     const xScale = this.transform.rescaleX(this.xScale);
     const yScale = this.transform.rescaleY(this.yScale);
     selection.attr('d', (lineData: Point[]) => line(lineData.map(({x, y}) => [xScale(x), yScale(y)])));
+
+    this.svgSelection.select('g#x-axis')
+      .attr('transform', d3.zoomIdentity.translate(0, yScale.range()[1]).toString())
+      .call(d3.axisBottom(xScale));
+
+    this.svgSelection.select('g#y-axis')
+      .attr('transform', d3.zoomIdentity.translate(xScale.range()[0], 0).toString())
+      .call(d3.axisLeft(yScale));
   }
 }
