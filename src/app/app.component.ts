@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import * as d3 from 'd3';
+import {zoom} from 'd3';
 import {Selection} from 'd3-selection';
-import {zoom, ZoomBehavior, ZoomedElementBaseType} from 'd3';
 
 interface Point {
   x: number;
@@ -15,6 +15,7 @@ interface Point {
 })
 export class AppComponent implements OnInit {
   private dataGroupSelection: Selection<SVGGElement, any, HTMLElement, any>;
+  private svgSelection: Selection<SVGSVGElement, unknown, HTMLElement, any>;
 
   ngOnInit(): void {
 
@@ -32,7 +33,7 @@ export class AppComponent implements OnInit {
     console.log(linesData);
 
     const xScale = d3.scaleLinear()
-      .domain([1, xMaxValue])
+      .domain([0, xMaxValue])
       .range([xAxisWidth, svgWidth]);
 
     const yScale = d3.scaleLinear()
@@ -42,15 +43,21 @@ export class AppComponent implements OnInit {
     const line = d3.line();
 
     // This is the accessor function we talked about above
-    const zoomBehavior = d3.zoom().on('zoom', () => this.dataGroupSelection.attr('transform', d3.event.transform));
-
-    d3.select('svg#graph-container')
+    const extent: [[number, number], [number, number]] = [[xScale.range()[0], yScale.range()[0]], [xScale.range()[1], yScale.range()[1]]];
+    this.svgSelection = d3.select<SVGSVGElement, any>('svg#graph-container')
       .style('border', '1px solid black')
       .attr('width', svgWidth)
-      .attr('height', svgHeight);
+      .attr('height', svgHeight)
+      .call(d3.zoom()
+        .extent(extent)
+        .translateExtent(extent)
+        .scaleExtent([1, 8])
+        .on('zoom', () => {
+          console.log(extent, d3.event);
+          return this.dataGroupSelection.attr('transform', d3.event.transform);
+        }));
 
-    this.dataGroupSelection = d3.select<SVGGElement, any>('g#data-group')
-      .call(zoomBehavior);
+    this.dataGroupSelection = d3.select<SVGGElement, any>('g#data-group');
     this.updateData(linesData, line, xScale, yScale);
   }
 
@@ -75,10 +82,12 @@ export class AppComponent implements OnInit {
   private generateData(xMaxValue: number, yMaxValue: number): Point[][] {
     const xGenerator = d3.randomUniform(xMaxValue);
     const yGenerator = d3.randomUniform(yMaxValue);
-    return d3.range(10)
+    const linesData = d3.range(10)
       .map(() => d3.range(8)
         .map(() => ({ x: xGenerator(), y: yGenerator(), }))
         .sort((a, b) => a.x - b.x || a.y - b.y)
-    );
+      );
+    linesData.push([{x: 0, y: 0}, {x: xMaxValue - 1, y: 0}, {x: 0, y: yMaxValue - 1}, {x: xMaxValue - 1, y: yMaxValue - 1}]);
+    return linesData;
   }
 }
