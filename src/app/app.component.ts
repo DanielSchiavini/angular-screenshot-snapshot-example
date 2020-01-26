@@ -21,9 +21,6 @@ function getExtents([x0, x1]: number[], [y0, y1]: number[]): [[number, number], 
 
 const line = d3.line();
 
-const xAxisWidth = 100;
-const yAxisHeight = 100;
-
 const xMaxValue = 100;
 const yMaxValue = 60;
 
@@ -40,18 +37,23 @@ export class AppComponent implements OnInit {
   private yScale: ScaleLinear<number, number>;
   private transform = d3.zoomIdentity;
 
+  private svgWidth: number;
+  private svgHeight: number;
+  private xAxisHeight = 100;
+  private yAxisWidth = 100;
+
   ngOnInit(): void {
 
-    const svgWidth = window.innerWidth - 25;
-    const svgHeight = window.innerHeight - 25;
+    this.svgWidth = window.innerWidth - 25;
+    this.svgHeight = window.innerHeight - 25;
 
     this.xScale = d3.scaleLinear()
       .domain([0, xMaxValue])
-      .range([xAxisWidth, svgWidth]);
+      .range([this.yAxisWidth, this.svgWidth]);
 
     this.yScale = d3.scaleLinear()
       .domain([0, yMaxValue])
-      .range([0, svgHeight - yAxisHeight]);
+      .range([0, this.svgHeight - this.xAxisHeight]);
 
     // The data for our line
     const linesData = this.generateData();
@@ -65,11 +67,22 @@ export class AppComponent implements OnInit {
 
     this.svgSelection = d3.select<SVGSVGElement, null>('svg#graph-container')
       .style('border', '1px solid black')
-      .attr('width', svgWidth)
-      .attr('height', svgHeight)
+      .attr('width', this.svgWidth)
+      .attr('height', this.svgHeight)
       .call(this.zoom.on('zoom', () => this.zoomedIn(d3.event as ZoomEvent)));
 
     this.dataGroupSelection = d3.select<SVGGElement, Point[][]>('g#data-group');
+
+    this.svgSelection.insert('rect', 'g#x-axis')
+      .attr('width', '100%')
+      .attr('height', this.xAxisHeight)
+      .style('transform', 'translate(0, ' + (this.svgHeight - this.xAxisHeight) + 'px)')
+      .style('fill', 'white');
+
+    this.svgSelection.insert('rect', 'g#y-axis')
+      .attr('width', this.yAxisWidth)
+      .attr('height', '100%')
+      .style('fill', 'white');
 
     this.updateData(linesData);
   }
